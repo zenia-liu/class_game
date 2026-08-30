@@ -1,0 +1,7 @@
+data/db.json
+.env
+.env.local
+.env.*.local
+.workbuddy/mvp-smoke.cjs
+.workbuddy/mvp-smoke.png
+witch-game-review.png

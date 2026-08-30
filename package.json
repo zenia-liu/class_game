@@ -1,0 +1,13 @@
+{
+  "name": "classplay-workshop-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check api/index.mjs && node --check lib/generator.mjs && node --check public/app.js && node --check public/game-builder.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

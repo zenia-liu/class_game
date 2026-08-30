@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="课游工坊——把知识点变成小学课堂互动游戏">
+  <title>课游工坊｜一句话生成课堂游戏</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="paper-dots" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#" data-view-link="create" aria-label="课游工坊首页">
+      <span class="brand-mark"><span>课</span><span>游</span></span>
+      <span><strong>课游工坊</strong><small>让知识玩起来</small></span>
+    </a>
+    <nav class="main-nav" aria-label="主导航">
+      <button class="nav-item active" data-view-link="create">开始制作</button>
+      <button class="nav-item" data-view-link="my">我的课游</button>
+    </nav>
+    <span class="local-mode-badge">无需登录 · 本机保存</span>
+  </header>
+
+  <main>
+    <section class="view active" id="createView">
+      <div class="creator-shell">
+        <div class="hero-copy">
+          <div class="eyebrow">给一线教师的备课工具</div>
+          <h1>一句话，把知识点<br><em>变成课堂游戏</em></h1>
+          <p>告诉我们今天想让学生练什么，自动生成题目，检查后即可下载完全离线的互动游戏。</p>
+        </div>
+
+        <ol class="stepper" id="stepper" aria-label="制作步骤">
+          <li class="active" data-step-target="1"><span>1</span><b>说说练什么</b></li>
+          <li data-step-target="2"><span>2</span><b>检查题目</b></li>
+          <li data-step-target="3"><span>3</span><b>选择玩法</b></li>
+          <li data-step-target="4"><span>4</span><b>预览下载</b></li>
+        </ol>
+
+        <section class="maker-card active" data-step="1">
+          <div class="card-heading">
+            <span class="heading-icon sun-icon">01</span>
+            <div><p class="kicker">第一步</p><h2>今天想让学生练什么？</h2></div>
+          </div>
+          <label class="prompt-box">
+            <textarea id="promptInput" rows="5" maxlength="12000" placeholder="例如：给三年级学生复习两位数乘一位数，难度适中"></textarea>
+            <span class="prompt-hint">像和同事说话一样描述就可以</span>
+          </label>
+          <div class="example-row" aria-label="示例">
+            <span>试试：</span>
+            <button data-example="给三年级学生复习两位数乘一位数，生成适合红蓝队比赛的题目">三年级口算</button>
+            <button data-example="五年级英语食物类单词，练习单词和中文含义">英语食物单词</button>
+            <button data-example="四年级语文《观潮》的重点词语和课文理解">《观潮》复习</button>
+          </div>
+          <div class="smart-fields">
+            <label>年级<select id="gradeSelect"><option value="">智能识别</option><option>一年级</option><option>二年级</option><option>三年级</option><option>四年级</option><option>五年级</option><option>六年级</option></select></label>
+            <label>学科<select id="subjectSelect"><option value="">智能识别</option><option>语文</option><option>数学</option><option>英语</option><option>科学</option><option>综合</option></select></label>
+            <label>题量<select id="countSelect"><option value="8">8题</option><option value="10" selected>10题</option><option value="12">12题</option><option value="15">15题</option></select></label>
+          </div>
+          <details class="existing-content">
+            <summary>我已经有题目或教材内容</summary>
+            <p>直接粘贴在上面的输入框中。系统会优先整理已有内容，不要求固定格式。</p>
+          </details>
+          <div class="primary-row">
+            <span class="service-status" id="serviceStatus"><i></i>正在检查智能服务…</span>
+            <button class="primary-button" id="generateButton"><span>✦</span> 帮我生成题目 <b>→</b></button>
+          </div>
+        </section>
+
+        <section class="maker-card" data-step="2">
+          <div class="section-topline">
+            <div class="card-heading compact"><span class="heading-icon">02</span><div><p class="kicker">第二步</p><h2>检查一下题目</h2></div></div>
+            <div class="detected-tags" id="detectedTags"></div>
+          </div>
+          <div class="notice good"><span>AI会犯错</span> 请确认题目和答案后再用于课堂。每一项都可以直接修改。</div>
+          <div class="editor-tabs" role="tablist">
+            <button class="active" data-editor-tab="quiz">问答题 <span id="quizCount">0</span></button>
+            <button data-editor-tab="pairs">配对卡 <span id="pairCount">0</span></button>
+            <button data-editor-tab="cards">知识卡 <span id="cardCount">0</span></button>
+          </div>
+          <div class="editor-list" id="editorList"></div>
+          <button class="add-item" id="addItemButton">＋ 添加一项</button>
+          <div class="bottom-actions"><button class="ghost-button" data-go-step="1">← 返回修改要求</button><button class="primary-button" data-go-step="3">题目没问题，选择玩法 →</button></div>
+        </section>
+
+        <section class="maker-card" data-step="3">
+          <div class="card-heading compact"><span class="heading-icon">03</span><div><p class="kicker">第三步</p><h2>选择课堂玩法</h2><p>四款游戏都支持红蓝队大屏互动</p></div></div>
+          <div class="game-picker" id="gamePicker"></div>
+          <div class="game-settings">
+            <label>游戏标题<input id="gameTitleInput" maxlength="60"></label>
+            <label>课堂模式<select id="modeSelect"><option value="team">红蓝队 PK</option><option value="solo" disabled>个人练习（后续开放）</option></select></label>
+          </div>
+          <div class="bottom-actions"><button class="ghost-button" data-go-step="2">← 返回检查题目</button><button class="primary-button" id="previewButton">生成游戏预览 →</button></div>
+        </section>
+
+        <section class="maker-card preview-card" data-step="4">
+          <div class="section-topline">
+            <div class="card-heading compact"><span class="heading-icon">04</span><div><p class="kicker">第四步</p><h2>试玩满意，就带走吧</h2></div></div>
+            <span class="offline-badge">断网也能玩</span>
+          </div>
+          <div class="preview-frame-wrap"><iframe id="previewFrame" title="课堂游戏预览" sandbox="allow-scripts allow-same-origin allow-modals"></iframe></div>
+          <div class="delivery-actions">
+            <button class="ghost-button" data-go-step="3">← 换个玩法</button>
+            <button class="primary-button download" id="downloadButton">↓ 下载离线游戏</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view my-view" id="myView">
+      <div class="my-shell">
+        <div class="my-hero">
+          <div><span class="eyebrow">备课作品夹</span><h1>我的课游</h1><p>找回做过的课游，继续调整或下载课堂版本。</p></div>
+          <button class="primary-button" data-view-link="create">＋ 制作新课游</button>
+        </div>
+        <section class="my-section" aria-labelledby="localProjectsTitle">
+          <div class="my-section-heading"><div><span class="section-index">01</span><h2 id="localProjectsTitle">本机制作记录</h2></div><p>最多保存最近 20 份，仅存放在当前浏览器</p></div>
+          <div class="my-grid" id="localProjectGrid"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="loading-layer" id="loadingLayer" aria-live="polite"><div class="magic-loader"><span>✦</span><span>✦</span><span>✦</span></div><strong id="loadingText">正在把知识点变成题目…</strong><p>通常只需要几秒钟</p></div>
+  <div class="site-toast" id="siteToast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

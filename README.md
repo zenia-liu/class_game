@@ -52,3 +52,4 @@ node scripts/verify-vercel.mjs
 
 需求与产品决策见 [需求文档-课游工坊.md](./需求文档-课游工坊.md)。
 "# class_game" 
+"# class_game" 
