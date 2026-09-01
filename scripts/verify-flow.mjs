@@ -90,6 +90,40 @@ function startServer(env, port) {
   assert.equal(res3.statusCode, 502);
   assert.ok(res3.body.error.includes("/v1"));
   console.log("场景5【空响应提示】：状态 =", res3.statusCode, "| 错误信息 =", res3.body.error);
+
+  // ========== 场景6：分部并行生成（quiz1/quiz2/pairs/cards）——前端新流程的后端接口 ==========
+  process.env.WORKSHOP_AI_CHAT_URL = "http://127.0.0.1:4712/v1/chat/completions";
+  const partResults = {};
+  for (const partName of ["quiz1", "quiz2", "pairs", "cards"]) {
+    const partRes = { statusCode: 0, setHeader() {}, end(v) { this.body = JSON.parse(v); } };
+    await handler({ method: "POST", query: { path: "generate" }, headers: { "x-forwarded-for": "6.6.6.6" }, socket: {}, body: { prompt: "三年级数学 两位数乘一位数", grade: "三年级", subject: "数学", count: 10, part: partName } }, partRes);
+    assert.equal(partRes.statusCode, 200);
+    assert.equal(partRes.body.part, partName);
+    assert.equal(partRes.body.mode, "ai");
+    partResults[partName] = partRes.body.data;
+  }
+  assert.ok(partResults.quiz1.meta && partResults.quiz1.quizItems.length >= 1);
+  assert.ok(partResults.quiz2.quizItems.length >= 1);
+  assert.ok(partResults.pairs.pairs.length >= 2);
+  assert.ok(partResults.cards.cards.length >= 4);
+  assert.ok(partResults.quiz1.quizItems.every(item => item.options.length >= 2 && item.answer));
+  const chunkRes = { statusCode: 0, setHeader() {}, end(v) { this.body = JSON.parse(v); } };
+  await handler({ method: "POST", query: { path: "generate" }, headers: { "x-forwarded-for": "6.6.6.6" }, socket: {}, body: { prompt: "三年级数学 两位数乘一位数", grade: "三年级", subject: "数学", count: 20, part: "quiz", partIndex: 3, partTotal: 4, partCount: 5 } }, chunkRes);
+  assert.equal(chunkRes.statusCode, 200);
+  assert.equal(chunkRes.body.part, "quiz");
+  assert.ok(chunkRes.body.data.meta && chunkRes.body.data.quizItems.length >= 1);
+  console.log("场景6【分部并行】：quiz1 题数", partResults.quiz1.quizItems.length, "| quiz2 题数", partResults.quiz2.quizItems.length, "| 配对", partResults.pairs.pairs.length, "| 卡", partResults.cards.cards.length, "| 分组 quiz(3/4) 题数", chunkRes.body.data.quizItems.length);
+
+  // ========== 场景7：无 Key 时分部请求也能返回演示内容 ==========
+  const savedKey = process.env.WORKSHOP_AI_API_KEY;
+  delete process.env.WORKSHOP_AI_API_KEY;
+  const demoPartRes = { statusCode: 0, setHeader() {}, end(v) { this.body = JSON.parse(v); } };
+  await handler({ method: "POST", query: { path: "generate" }, headers: { "x-forwarded-for": "5.5.5.5" }, socket: {}, body: { prompt: "三年级数学", part: "pairs" } }, demoPartRes);
+  assert.equal(demoPartRes.statusCode, 200);
+  assert.equal(demoPartRes.body.mode, "demo");
+  assert.ok(demoPartRes.body.data.pairs.length >= 2);
+  process.env.WORKSHOP_AI_API_KEY = savedKey;
+  console.log("场景7【无Key分部演示】：mode =", demoPartRes.body.mode, "| 配对数 =", demoPartRes.body.data.pairs.length);
   mockAi.close(); badAi.close(); emptyAi.close();
 }
 console.log("\n全部场景通过。");

@@ -225,26 +225,55 @@ async function generatePack() {
     $("#promptInput").focus();
     return;
   }
-  setLoading(true);
+  const base = { prompt, grade: $("#gradeSelect").value, subject: $("#subjectSelect").value, count: Number($("#countSelect").value) || 10 };
+  const chunkTotal = Math.ceil(base.count / 5);
+  const perChunk = Math.ceil(base.count / chunkTotal);
+  const totalCalls = chunkTotal + 2;
+  let done = 0;
+  setLoading(true, `正在把知识点变成题目…（0/${totalCalls}）`);
+  const call = extra => api("/api/generate", { method: "POST", body: JSON.stringify({ ...base, ...extra }) })
+    .finally(() => { done += 1; $("#loadingText").textContent = `正在把知识点变成题目…（${done}/${totalCalls}）`; });
+  const quizCalls = Array.from({ length: chunkTotal }, (_, index) => call({
+    part: "quiz", partIndex: index + 1, partTotal: chunkTotal,
+    partCount: index === chunkTotal - 1 ? Math.max(base.count - perChunk * (chunkTotal - 1), 2) : perChunk
+  }));
   try {
-    const result = await api("/api/generate", {
-      method: "POST",
-      body: JSON.stringify({ prompt, grade: $("#gradeSelect").value, subject: $("#subjectSelect").value, count: Number($("#countSelect").value) })
-    });
-    state.pack = result.pack;
+    const settled = await Promise.allSettled([...quizCalls, call({ part: "pairs" }), call({ part: "cards" })]);
+    const quizSettled = settled.slice(0, chunkTotal);
+    const [pr, cd] = settled.slice(chunkTotal);
+    const okQuiz = quizSettled.filter(item => item.status === "fulfilled");
+    if (!okQuiz.length) {
+      const reason = quizSettled[0].reason;
+      if (reason?.payload?.fallback) {
+        state.pack = reason.payload.fallback;
+        state.currentLocalProjectId = null;
+        goStep(2);
+        showToast(`${reason.message || "生成失败"}。已临时载入演示占位题（非AI生成），建议重新点击生成`, 6000);
+      } else showToast(reason?.message || "操作没有完成，请稍后再试", 5000);
+      return;
+    }
+    const seenPrompts = new Set();
+    const quizItems = okQuiz.flatMap(item => item.value.data.quizItems || [])
+      .filter(item => !seenPrompts.has(item.prompt) && seenPrompts.add(item.prompt));
+    const failed = [];
+    if (okQuiz.length < chunkTotal) failed.push("部分选择题");
+    const pairs = pr.status === "fulfilled" ? pr.value.data.pairs : (pr.reason?.payload?.fallback?.pairs || []);
+    if (pr.status === "rejected") failed.push("配对卡");
+    const cards = cd.status === "fulfilled" ? cd.value.data.cards : (cd.reason?.payload?.fallback?.cards || []);
+    if (cd.status === "rejected") failed.push("知识卡");
+    const mode = okQuiz.some(item => item.value.mode === "ai") ? "ai" : "demo";
+    const meta = okQuiz.find(item => item.value.data.meta)?.value.data.meta || { title: "课堂挑战" };
+    meta.source = mode;
+    state.pack = { meta, quizItems, pairs, cards };
     state.currentLocalProjectId = null;
-    if ($("#gradeSelect").value) state.pack.meta.grade = $("#gradeSelect").value;
-    if ($("#subjectSelect").value) state.pack.meta.subject = $("#subjectSelect").value;
+    if (base.grade) state.pack.meta.grade = base.grade;
+    if (base.subject) state.pack.meta.subject = base.subject;
     $("#gameTitleInput").value = state.pack.meta.title || "课堂挑战";
     saveDraft();
     goStep(2);
-    showToast(result.notice || "题目已生成，请检查答案");
-  } catch (error) {
-    if (error.payload?.fallback) {
-      state.pack = error.payload.fallback;
-      goStep(2);
-      showToast(`${error.message}。已临时载入演示占位题（非AI生成），建议重新点击生成`, 6000);
-    } else showToast(error.message, 5000);
+    if (mode === "demo") showToast("当前未配置AI服务，已生成演示题目，请老师修改后使用", 5000);
+    else if (failed.length) showToast(`${failed.join("、")}这次生成失败，其余部分已就绪；缺的内容已用演示占位，可重新生成或手动修改`, 6000);
+    else showToast("题目已生成，请务必检查答案");
   } finally {
     setLoading(false);
   }

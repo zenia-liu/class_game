@@ -27,7 +27,7 @@ function allowGenerate(req) {
   const key = forwarded.split(",")[0].trim();
   const now = Date.now();
   const recent = (attempts.get(key) || []).filter(time => now - time < 10 * 60_000);
-  if (recent.length >= 20) return false;
+  if (recent.length >= 80) return false;
   recent.push(now);
   attempts.set(key, recent);
   return true;
