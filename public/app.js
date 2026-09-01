@@ -135,6 +135,12 @@ function updateDetectedTags() {
     chip.textContent = value;
     target.append(chip);
   });
+  if (meta.source && meta.source !== "ai") {
+    const warn = document.createElement("span");
+    warn.className = "tag-warn";
+    warn.textContent = "⚠ 演示占位题（AI 未生效，题目是固定模板）";
+    target.append(warn);
+  }
 }
 
 function field(labelText, value, onInput, options = {}) {

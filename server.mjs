@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { aiAvailable, demoPack, generatePack, safeText } from "./lib/generator.mjs";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
+try { process.loadEnvFile(join(ROOT, ".env")); console.log("已读取本地 .env 配置"); } catch { /* 没有 .env 时使用系统环境变量 */ }
 const PUBLIC_DIR = join(ROOT, "public");
 const PORT = Number(process.env.PORT || process.env.WORKSHOP_PORT || 4173);
 const HOST = process.env.WORKSHOP_HOST || (process.env.PORT ? "0.0.0.0" : "127.0.0.1");
