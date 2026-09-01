@@ -37,7 +37,20 @@ export default async function handler(req, res) {
   const path = String(req.query?.path || "").replace(/^\/+|\/+$/g, "");
   try {
     if (req.method === "GET" && path === "health") return sendJson(res, 200, { ok: true });
-    if (req.method === "GET" && path === "config") return sendJson(res, 200, { aiAvailable: aiAvailable(), modelLabel: aiAvailable() ? "智能出题已连接" : "演示题库模式" });
+    if (req.method === "GET" && path === "config") {
+      const body = { aiAvailable: aiAvailable(), modelLabel: aiAvailable() ? "智能出题已连接" : "演示题库模式" };
+      if (req.query?.debug === "1") {
+        body.diag = {
+          workshopVars: Object.keys(process.env).filter(key => key.toUpperCase().includes("WORKSHOP")).sort(),
+          keyLength: (process.env.WORKSHOP_AI_API_KEY || "").length,
+          model: process.env.WORKSHOP_AI_MODEL || "(未设置，默认 deepseek-chat)",
+          baseUrl: process.env.WORKSHOP_AI_BASE_URL || "(未设置，默认 https://api.deepseek.com)",
+          chatUrl: process.env.WORKSHOP_AI_CHAT_URL || "(未设置)",
+          jsonMode: process.env.WORKSHOP_AI_JSON_MODE || "(未设置，默认开启)"
+        };
+      }
+      return sendJson(res, 200, body);
+    }
     if (req.method === "POST" && path === "generate") {
       if (!allowGenerate(req)) return sendJson(res, 429, { error: "生成得有些频繁，请十分钟后再试" });
       const body = await readBody(req);
