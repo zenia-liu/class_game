@@ -237,8 +237,8 @@ async function generatePack() {
     if (error.payload?.fallback) {
       state.pack = error.payload.fallback;
       goStep(2);
-      showToast("智能服务暂时不可用，已载入可编辑的演示题");
-    } else showToast(error.message);
+      showToast(`${error.message}。已临时载入演示占位题（非AI生成），建议重新点击生成`, 6000);
+    } else showToast(error.message, 5000);
   } finally {
     setLoading(false);
   }
