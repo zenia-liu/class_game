@@ -80,6 +80,16 @@ function startServer(env, port) {
   assert.ok(res2.body.error.includes("402"));
   assert.ok(res2.body.fallback);
   console.log("场景4【AI 报错降级】：状态 =", res2.statusCode, "| 错误信息 =", res2.body.error);
-  mockAi.close(); badAi.close();
+
+  // ========== 场景5：接口路径错误（返回空 200，如 Base URL 缺 /v1）——应提示检查地址 ==========
+  process.env.WORKSHOP_AI_CHAT_URL = "http://127.0.0.1:4715/chat/completions";
+  const emptyAi = http.createServer((req, res) => { res.statusCode = 200; res.end(""); });
+  await new Promise(r => emptyAi.listen(4715, "127.0.0.1", r));
+  const res3 = { statusCode: 0, setHeader() {}, end(v) { this.body = JSON.parse(v); } };
+  await handler({ method: "POST", query: { path: "generate" }, headers: { "x-forwarded-for": "7.7.7.7" }, socket: {}, body: { prompt: "三年级数学", grade: "三年级", subject: "数学" } }, res3);
+  assert.equal(res3.statusCode, 502);
+  assert.ok(res3.body.error.includes("/v1"));
+  console.log("场景5【空响应提示】：状态 =", res3.statusCode, "| 错误信息 =", res3.body.error);
+  mockAi.close(); badAi.close(); emptyAi.close();
 }
 console.log("\n全部场景通过。");
